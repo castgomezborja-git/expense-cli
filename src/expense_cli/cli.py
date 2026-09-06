@@ -1,13 +1,14 @@
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from typing import Optional
+from enum import Enum
 
 import typer
-from sqlalchemy import select, desc
+from sqlalchemy import select
 
 from expense_cli.db import get_session, init_db
 from expense_cli.models import Category, Transaction
-from expense_cli.reports import get_filtered_transactions, render_console_report
+from expense_cli.reports import get_filtered_transactions, render_console_report, export_csv
 
 app = typer.Typer()
 
@@ -76,6 +77,38 @@ def list_transactions(
 
     # 2. Imprime los gastos en una tabla usando rich.Table
     render_console_report(transactions)
+
+class ReportFormat(str, Enum):
+    CONSOLE = "console"
+    CSV = "csv"
+    PDF = "pdf"
+
+
+@app.command()
+def report(
+    category_name: Optional[str] = None,
+    date_init: Optional[str] = None,
+    date_end: Optional[str] = None,
+    format: Optional[ReportFormat] = None,
+):
+    session = get_session()
+    transactions = get_filtered_transactions(session, category_name, date_init, date_end)
+
+    if format is None:
+        chosen = typer.prompt(
+            "¿Formato del reporte? (console/csv/pdf)",
+            default="console",
+        )
+        format = ReportFormat(chosen)
+
+    if format == ReportFormat.CONSOLE:
+        render_console_report(transactions)
+    elif format == ReportFormat.CSV:
+        filepath = typer.prompt("¿Dónde quieres guardar el CSV?", default="reporte.csv")
+        export_csv(transactions, filepath)
+        typer.echo(f"Reporte guardado en {filepath}")
+    elif format == ReportFormat.PDF:
+        typer.echo("Exportación a PDF todavía no implementada.")
 
 if __name__ == "__main__":
     app()
