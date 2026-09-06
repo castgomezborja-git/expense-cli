@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from expense_cli.db import get_session, init_db
 from expense_cli.models import Category, Transaction
-from expense_cli.reports import get_filtered_transactions, render_console_report, export_csv
+from expense_cli.reports import get_filtered_transactions, render_console_report, export_csv, export_pdf
 
 app = typer.Typer()
 
@@ -108,7 +108,9 @@ def report(
         export_csv(transactions, filepath)
         typer.echo(f"Reporte guardado en {filepath}")
     elif format == ReportFormat.PDF:
-        typer.echo("Exportación a PDF todavía no implementada.")
+        filepath = typer.prompt("¿Dónde quieres guardar el PDF?", default="reporte.pdf")
+        export_pdf(transactions, filepath)
+        typer.echo(f"Reporte guardado en {filepath}")
 
 if __name__ == "__main__":
     app()

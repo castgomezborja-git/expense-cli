@@ -13,6 +13,8 @@ from rich.table import Table
 
 import csv
 
+from fpdf import FPDF
+
 def get_filtered_transactions(
     session: Session,
     category_name: Optional[str] = None,
@@ -65,5 +67,26 @@ def export_csv(transactions: list[Transaction], filepath: str) -> None:
                 transaction.date.strftime("%Y-%m-%d %H:%M"),
                 f"{transaction.amount:.2f}",
                 transaction.category.name,
-                transaction.description or "",
+                transaction.description or "-",
             ])
+
+def export_pdf(transactions: list[Transaction], filepath: str) -> None:
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", style="B", size=16)
+
+    # Cabecera de la tabla
+    pdf.cell(w=40, text="Fecha", border=1)
+    pdf.cell(w=30, text="Cantidad", border=1)
+    pdf.cell(w=40, text="Categoría", border=1)
+    pdf.cell(w=80, text="Descripción", border=1, ln=True)
+
+    pdf.set_font("Helvetica", size=12)
+
+    for transaction in transactions:
+        pdf.cell(w=40, text=transaction.date.strftime("%Y-%m-%d %H:%M"), border=1)
+        pdf.cell(w=30, text=f"{transaction.amount:.2f}", border=1)
+        pdf.cell(w=40, text=transaction.category.name, border=1)
+        pdf.cell(w=80, text=transaction.description or "-", border=1, ln=True)
+
+    pdf.output(filepath)
