@@ -14,6 +14,7 @@ from rich.table import Table
 import csv
 
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 def get_filtered_transactions(
     session: Session,
@@ -79,7 +80,7 @@ def export_pdf(transactions: list[Transaction], filepath: str) -> None:
     pdf.cell(w=40, text="Fecha", border=1)
     pdf.cell(w=30, text="Cantidad", border=1)
     pdf.cell(w=40, text="Categoría", border=1)
-    pdf.cell(w=80, text="Descripción", border=1, ln=True)
+    pdf.cell(w=80, text="Descripción", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", size=12)
 
@@ -87,6 +88,6 @@ def export_pdf(transactions: list[Transaction], filepath: str) -> None:
         pdf.cell(w=40, text=transaction.date.strftime("%Y-%m-%d %H:%M"), border=1)
         pdf.cell(w=30, text=f"{transaction.amount:.2f}", border=1)
         pdf.cell(w=40, text=transaction.category.name, border=1)
-        pdf.cell(w=80, text=transaction.description or "-", border=1, ln=True)
+        pdf.cell(w=80, text=transaction.description or "-", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.output(filepath)
