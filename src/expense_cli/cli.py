@@ -7,9 +7,7 @@ from sqlalchemy import select, desc
 
 from expense_cli.db import get_session, init_db
 from expense_cli.models import Category, Transaction
-
-from rich.console import Console
-from rich.table import Table
+from expense_cli.reports import get_filtered_transactions, render_console_report
 
 app = typer.Typer()
 
@@ -73,43 +71,11 @@ def list_transactions(
     session = get_session()
 
     # 1. Construye la query para obtener los gastos, ordenados por fecha descendente
-    statement = select(Transaction).order_by(desc(Transaction.date))
+    session = get_session()
+    transactions = get_filtered_transactions(session, category_name, date_init, date_end)
 
-    # 2. Si category_name no es None, filtra por esa categoría
-    if category_name:
-        statement = statement.join(Transaction.category).where(Category.name == category_name)
-
-    # 3. Si date_init y date_end no son None, filtra por ese rango de fechas
-    if date_init and date_end:
-        statement = statement.where(
-            Transaction.date >= datetime.strptime(date_init, "%Y-%m-%d"),
-            Transaction.date <= datetime.strptime(date_end, "%Y-%m-%d")
-        )
-    elif date_init:
-        statement = statement.where(Transaction.date >= datetime.strptime(date_init, "%Y-%m-%d"))
-    elif date_end:
-        statement = statement.where(Transaction.date <= datetime.strptime(date_end, "%Y-%m-%d"))
-
-    transactions = session.execute(statement).scalars().all()
-
-    # 4. Imprime los gastos en una tabla usando rich.Table
-    table = Table(title="Gastos")
-
-    table.add_column("Cantidad", style="red")
-    table.add_column("Fecha", style="cyan")
-    table.add_column("Categoría", style="yellow")
-    table.add_column("Descripción", style="green")
-
-    for transaction in transactions:
-        table.add_row(
-            f"{transaction.amount:.2f}",
-            transaction.date.strftime("%Y-%m-%d %H:%M"),
-            transaction.category.name,
-            transaction.description or "-",
-        )
-
-    console = Console()
-    console.print(table)
+    # 2. Imprime los gastos en una tabla usando rich.Table
+    render_console_report(transactions)
 
 if __name__ == "__main__":
     app()
